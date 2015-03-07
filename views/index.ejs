@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no" />
+    <link rel="stylesheet" href="/stylesheets/rgs.style.css">
+    <link rel="stylesheet" href="/stylesheets/fontello.css">
+    <script src="/scripts/respond.min.js"></script>
+    <script src="/scripts/jquery-2.1.1.min.js"></script>
+    <script src="/scripts/jQueryRotate.js"></script>
+    <script src="/socket.io/socket.io.js" type="text/javascript"></script>
+    <script type="text/javascript">
+        var socket = io.connect('/');
+        socket.on('msg', function(data) {
+            var $addDiv = $("<div>");
+            $addDiv.addClass("d_balloon d_bg_light_green");
+            var $dateSpan = $("<span>");
+            $dateSpan.append(data.date + "  ");
+            $dateSpan.css = 'color: #A9A9A9';
+            var $nameSpan = $("<span>");
+            $nameSpan.append(data.userName + "さんから＞  ");
+            var $messageSpan = $("<div>");
+            //create message
+            var message = data.message.replace(/\r\n/g, "<br />");
+            message = message.replace(/(\n|\r)/g, "<br />");
+            $messageSpan.append(message);
+            $addDiv.append($dateSpan);
+            $addDiv.append($nameSpan);
+            $addDiv.append($messageSpan);
+            if (data.image != "") {
+                var imageElement = document.createElement('img');
+                imageElement.src = data.image;
+                if (imageElement.naturalWidth > window.innerWidth - 60) {
+                    imageElement.className = "d_width_100";
+                }
+                var $imageElement = $(imageElement);
+                $addDiv.append($imageElement);
+            }
+            $("#message").prepend($addDiv);
+        });
+
+        function submit() {
+            var message = $("#msg").val();
+            var userName = $("#userName").html();
+            var image = "";
+            var $emitImage = $("#emitImageDataUrl");
+            if ($emitImage.val() != "" && confirm("画像を送信します")) {
+                image = $emitImage.val();
+                socket.emit("msg", {
+                    message: message,
+                    userName: userName,
+                    image: image
+                });
+                clearFile($("#emitImage"));
+            } else {
+                socket.emit("msg", {
+                    message: message,
+                    userName: userName,
+                    image: image
+                });
+            }
+            $("#msg").val("");
+        }
+
+        function clearFile(fileButton) {
+            var $fileButton = fileButton
+            $fileButton.replaceWith($fileButton.clone(true));
+            $("#emitImageDataUrl").val("");
+        }
+
+        function deleteFile() {
+            clearFile($("#emitImage"));
+        }
+
+        function toggleFileArea() {
+            $("div.fileArea").toggle();
+        }
+
+        function toggleCameraArea() {
+            $("div.cameraArea").toggle();
+        }
+
+        //compress image function
+        $(document).ready(function() {
+            $('#emitImage').on("change",function(e) {
+                fileChangeAction(e);
+            });
+
+            // JPEGのEXIFからOrientationのみを取得する
+            function getOrientation(imgDataURL){
+                var byteString = atob(imgDataURL.split(',')[1]);
+                var orientaion = byteStringToOrientation(byteString);
+                return orientaion;
+
+                function byteStringToOrientation(img){
+                    var head = 0;
+                    var orientation;
+                    while (1){
+                        if (img.charCodeAt(head) == 255 & img.charCodeAt(head + 1) == 218) {break;}
+                        if (img.charCodeAt(head) == 255 & img.charCodeAt(head + 1) == 216) {
+                            head += 2;
+                        }
+                        else {
+                            var length = img.charCodeAt(head + 2) * 256 + img.charCodeAt(head + 3);
+                            var endPoint = head + length + 2;
+                            if (img.charCodeAt(head) == 255 & img.charCodeAt(head + 1) == 225) {
+                                var segment = img.slice(head, endPoint);
+                                var bigEndian = segment.charCodeAt(10) == 77;
+                                if (bigEndian) {
+                                    var count = segment.charCodeAt(18) * 256 + segment.charCodeAt(19);
+                                } else {
+                                    var count = segment.charCodeAt(18) + segment.charCodeAt(19) * 256;
+                                }
+                                for (i=0;i<count;i++){
+                                    var field = segment.slice(20 + 12 * i, 32 + 12 * i);
+                                    if ((bigEndian && field.charCodeAt(1) == 18) || (!bigEndian && field.charCodeAt(0) == 18)) {
+                                        orientation = bigEndian ? field.charCodeAt(9) : field.charCodeAt(8);
+                                    }
+                                }
+                                break;
+                            }
+                            head = endPoint;
+                        }
+                        if (head > img.length){break;}
+                    }
+                    return orientation;
+                }
+            }
+
+            // iPhoneのサブサンプリングを検出
+            function detectSubsampling(img) {
+                var iw = img.naturalWidth, ih = img.naturalHeight;
+                if (iw * ih > 1024 * 1024) {
+                    var canvas = $('<canvas>');
+                    canvas[0].width = canvas[0].height = 1;
+                    var ctx = canvas[0].getContext('2d');
+                    ctx.drawImage(img, -iw + 1, 0);
+                    return ctx.getImageData(0, 0, 1, 1).data[3] === 0;
+                } else {
+                    return false;
+                }
+            }
+
+            // iPhoneの縦画像でひしゃげて表示される問題
+            function detectVerticalSquash(img, iw, ih) {
+                var canvas = $('<canvas>');
+                canvas[0].width = 1;
+                canvas[0].height = ih;
+                var ctx = canvas[0].getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                var data = ctx.getImageData(0, 0, 1, ih).data;
+                var sy = 0;
+                var ey = ih;
+                var py = ih;
+                while (py > sy) {
+                    var alpha = data[(py - 1) * 4 + 3];
+                    if (alpha === 0) {
+                        ey = py;
+                    } else {
+                        sy = py;
+                    }
+                    py = (ey + sy) >> 1;
+                }
+                var ratio = (py / ih);
+                return (ratio===0)?1:ratio;
+            }
+
+            function transformCoordinate(canvas, width, height, orientation) {
+                if (orientation > 4) {
+                    canvas[0].width = height;
+                    canvas[0].height = width;
+                } else {
+                    canvas[0].width = width;
+                    canvas[0].height = height;
+                }
+                var ctx = canvas[0].getContext('2d');
+                switch (orientation) {
+                    case 2:
+                        // horizontal flip
+                        ctx.translate(width, 0);
+                        ctx.scale(-1, 1);
+                        break;
+                    case 3:
+                        // 180 rotate left
+                        ctx.translate(width, height);
+                        ctx.rotate(Math.PI);
+                        break;
+                    case 4:
+                        // vertical flip
+                        ctx.translate(0, height);
+                        ctx.scale(1, -1);
+                        break;
+                    case 5:
+                        // vertical flip + 90 rotate right
+                        ctx.rotate(0.5 * Math.PI);
+                        ctx.scale(1, -1);
+                        break;
+                    case 6:
+                        // 90 rotate right
+                        ctx.rotate(0.5 * Math.PI);
+                        ctx.translate(0, -height);
+                        break;
+                    case 7:
+                        // horizontal flip + 90 rotate right
+                        ctx.rotate(0.5 * Math.PI);
+                        ctx.translate(width, -height);
+                        ctx.scale(-1, 1);
+                        break;
+                    case 8:
+                        // 90 rotate left
+                        ctx.rotate(-0.5 * Math.PI);
+                        ctx.translate(-width, 0);
+                        break;
+                    default:
+                        break;
+                }
+            }
+            
+            function fileChangeAction(e) {
+                var file = e.target.files[0];
+
+                if (!file.type.match(/^image\/(png|jpeg|gif)$/)) {
+                    alert("png, jpeg, gifのいずれかのファイルを選択してください。");
+                    return;
+                }
+                var img = new Image();
+                var reader = new FileReader();
+
+                var maxWidth = 740;
+                var maxHeight = 740;
+
+                reader.onload = function(e) {
+                    var data = e.target.result;
+
+                    img.onload = function() {
+                        var iw = img.naturalWidth, ih = img.naturalHeight;
+                        var width = iw, height = ih;
+
+                        var orientation;
+
+                        // JPEGの場合には、EXIFからOrientation（回転）情報を取得
+                        if (data.split(',')[0].match('jpeg')) {
+                            orientation = getOrientation(data);
+                        }
+                        // JPEG以外や、JPEGでもEXIFが無い場合などには、標準の値に設定
+                        orientation = orientation || 1;
+
+                        // ９０度回転など、縦横が入れ替わる場合には事前に最大幅、高さを入れ替えておく
+                        if (orientation > 4) {
+                            var tmpMaxWidth = maxWidth;
+                            maxWidth = maxHeight;
+                            maxHeight = tmpMaxWidth;
+                        }
+
+                        if(width > maxWidth || height > maxHeight) {
+                            var ratio = width/maxWidth;
+                            if(ratio <= height/maxHeight) {
+                                ratio = height/maxHeight;
+                            }
+                            width = Math.floor(img.width/ratio);
+                            height = Math.floor(img.height/ratio);
+                        }
+
+
+                        var canvas = $('<canvas>');
+                        var ctx = canvas[0].getContext('2d');
+                        ctx.save();
+
+                        // EXIFのOrientation情報からCanvasを回転させておく
+                        transformCoordinate(canvas, width, height, orientation);
+
+                        // iPhoneのサブサンプリング問題の回避
+                        // see http://d.hatena.ne.jp/shinichitomita/20120927/1348726674
+                        var subsampled = detectSubsampling(img);
+                        if (subsampled) {
+                            iw /= 2;
+                            ih /= 2;
+                        }
+                        var d = 1024; // size of tiling canvas
+                        var tmpCanvas = $('<canvas>');
+                        tmpCanvas[0].width = tmpCanvas[0].height = d;
+                        var tmpCtx = tmpCanvas[0].getContext('2d');
+                        var vertSquashRatio = detectVerticalSquash(img, iw, ih);
+                        var dw = Math.ceil(d * width / iw);
+                        var dh = Math.ceil(d * height / ih / vertSquashRatio);
+                        var sy = 0;
+                        var dy = 0;
+                        while (sy < ih) {
+                            var sx = 0;
+                            var dx = 0;
+                            while (sx < iw) {
+                                tmpCtx.clearRect(0, 0, d, d);
+                                tmpCtx.drawImage(img, -sx, -sy);
+                                ctx.drawImage(tmpCanvas[0], 0, 0, d, d, dx, dy, dw, dh);
+                                sx += d;
+                                dx += dw;
+                            }
+                            sy += d;
+                            dy += dh;
+                        }
+                        ctx.restore();
+                        tmpCanvas = tmpCtx = null;
+
+                        var imageDataUrl = ctx.canvas.toDataURL('image/jpeg', 1.0);
+                        $("#emitImageDataUrl").val(imageDataUrl);
+//                        // プレビューするために<img>用のDataURLを作成
+//                        // (スマホなどの狭小画面でも画像の全体図が見れるように、解像度を保ったたま縮小表示したいので)
+//                        var displaySrc = ctx.canvas.toDataURL('image/png', 1);
+//                        var displayImg = $('<img>').attr({'src': displaySrc, 'id': 'preview'}).css({'maxWidth':'90%', 'maxHeight':'90%'});
+//                        $('body').append(displayImg);
+                    }
+                    img.src = data;
+                }
+                reader.readAsDataURL(file);                
+            }
+
+        });
+      </script>
+  </head>
+  <body>
+<div class="container row">
+<div class= "row">
+    <div class="col span_12 d_padding_5 d_bg_dark_green d_color_green">
+        <span class="d_font_1_5em">Welcome to Chat Room</span>
+        <span class="d_fl_right"><a href="/logout" class="d_link_button d_button_green">logout</a></span>
+    </div>
+    <div class="col span_12 d_padding_5">
+        <span id="userName"><%= user %></span>さんようこそ。
+    </div>
+    <div id="connectId"></div>
+    <div class="col span_12 d_padding_5 d_tx_al_center" data-role="footer" data-position="fixed" >
+        <span class="toggleFileArea" onclick="toggleFileArea()"><i class="icon-camera d_font_20px"></i></span>
+<textarea  id="msg" value="" rows="2" placeholder="input your comment!!" class="d_width_70 d_bg_white d_border_rad_5px" ></textarea >
+<span class="d_fl_right"><a href="javascript:void(0)" onclick="submit()" class="d_link_button d_button_green">Send</a></span>
+<div class="fileArea d_tx_al_center d_file_area" style="display: none;">
+    <input type="file" id="emitImage" accept="image/*" />
+    <input type="hidden" id="emitImageDataUrl" value="" />
+    <span class=""><a href="javascript:void(0)" onclick="deleteFile()" class="d_link_button d_button_green">×</a></span>
+    <span class="toggleCameraArea" onclick="toggleCameraArea()"><i class="icon-videocam-outline d_font_20px"></i>
+</span>
+</div>
+<div class="cameraArea" style="display: none;">
+    <canvas style="display:none;" width="640" height="480"></canvas>
+    <video autoplay width="640" height="480"></video>
+    <span class="intervalCondition"></span>
+    <div id="wrapper"> 
+	<button id="stop">stop</button>
+	<button id="sendImage">send image</button>
+	<button id="startInterval">start interval</button>
+	<button id="stopInterval">stop interval</button>
+	Interval span: <input type="text" id="intervalSpan" size="5" placeholder="span" value="20"></input>Sec
+    </div>
+</div>
+
+    </div>
+    <div id="message" class="col span_12 d_balloon_wrapper"></div>
+</div>
+</div>
+    <script>
+        var video = document.querySelector('video');
+        var canvas = document.querySelector('canvas');
+        var ctx = canvas.getContext('2d');
+        var localMediaStream = null;
+
+        //カメラ使えるかチェック
+        var hasGetUserMedia = function() {
+            cameraCheckFlag = !!(navigator.getUserMedia || navigator.webkitGetUserMedia ||
+                navigator.mozGetUserMedia || navigator.msGetUserMedia);
+            return cameraCheckFlag;
+        };
+        //エラー
+        var onFailSoHard = function(e) {
+            console.log('エラー!', e);
+            $("span.toggleCameraArea").css("display", "none");
+        };
+  
+        var sendImage = function() {
+            var image = "";
+            if (localMediaStream) {
+                ctx.drawImage(video, 0, 0);
+                image = canvas.toDataURL('image/jpeg', 1.0);
+           }
+            var message = $("#msg").val();
+            var userName = $("#userName").html();
+            socket.emit("msg",{message : message, userName : userName, image : image});
+            $("#msg").val("");
+        };
+ 
+        if (hasGetUserMedia()) {
+            console.log("getUserMedia対応ブラウザです。");
+        } else {
+            console.log("対応ブラウザです。");
+            $("span.toggleCameraArea").css("display", "none");
+        }
+ 
+ 
+        window.URL = window.URL || window.webkitURL;
+        navigator.getUserMedia  = navigator.getUserMedia || navigator.webkitGetUserMedia ||
+                                  navigator.mozGetUserMedia || navigator.msGetUserMedia;
+ 
+        navigator.getUserMedia({video: true}, function(stream) {
+          video.src = window.URL.createObjectURL(stream);
+          localMediaStream = stream;
+        }, onFailSoHard);
+ 
+
+        var interval;
+        function startInterval () {
+           var spanTime = $("#intervalSpan").val();
+           interval = setInterval("sendImage()", spanTime * 1000);
+           $("span.intervalCondition").html("now on capturing");
+        }
+        function stopInterval () {
+            clearInterval(interval);
+           $("span.intervalCondition").html("stop capture");
+        }
+    
+
+        //ボタンイベント
+        $("#stop").click(function() {
+            localMediaStream.stop();
+        });
+        $("video").click(function() {
+            snapshot();
+        });
+        $("#sendImage").click(function() {
+            sendImage();
+        });
+        $("#startInterval").click(function() {
+            startInterval();
+        });
+        $("#stopInterval").click(function() {
+            stopInterval();
+        });
+    </script>
+ </body>
+</html>

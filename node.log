@@ -1,0 +1,94 @@
+info: socket.io started
+server listening on port 3000
+Success connected: mongodb://localhost/user
+[90mGET /login [36m304 [90m48ms[0m
+[90mGET /login?user_name=%E3%81%AA%E3%81%8B%E3%82%80%E3%82%89&password=nakamura [32m200 [90m11ms - 642b[0m
+[90mGET /login?user_name=nakamura&password=nakamura [36m302 [90m34ms - 58b[0m
+nakamura
+[90mGET / [32m200 [90m6ms - 1020b[0m
+[90mGET /stylesheets/style.css [36m304 [90m8ms[0m
+debug: served static content /socket.io.js
+debug: client authorized
+info: handshake authorized HN0fWHHyUdstzY-WqUVp
+debug: setting request GET /socket.io/1/websocket/HN0fWHHyUdstzY-WqUVp
+debug: set heartbeat interval for client HN0fWHHyUdstzY-WqUVp
+debug: client authorized for 
+debug: websocket writing 1::
+connected from 192.168.249.1:59520
+nakamura
+[90mGET / [36m304 [90m4ms[0m
+debug: served static content /socket.io.js
+[90mGET /stylesheets/style.css [36m304 [90m9ms[0m
+debug: client authorized
+info: handshake authorized dB2svS8GMv5sKoKLqUVq
+debug: setting request GET /socket.io/1/websocket/dB2svS8GMv5sKoKLqUVq
+debug: set heartbeat interval for client dB2svS8GMv5sKoKLqUVq
+debug: client authorized for 
+debug: websocket writing 1::
+connected from 192.168.249.1:59519
+info: transport end (socket end)
+debug: set close timeout for client dB2svS8GMv5sKoKLqUVq
+debug: cleared close timeout for client dB2svS8GMv5sKoKLqUVq
+debug: cleared heartbeat interval for client dB2svS8GMv5sKoKLqUVq
+disconnectted from 192.168.249.1:59519
+debug: discarding transport
+[90mGET / [36m302 [90m2ms - 68b[0m
+[90mGET /login [32m200 [90m4ms - 642b[0m
+debug: emitting heartbeat for client HN0fWHHyUdstzY-WqUVp
+debug: websocket writing 2::
+debug: set heartbeat timeout for client HN0fWHHyUdstzY-WqUVp
+debug: got heartbeat packet
+debug: cleared heartbeat timeout for client HN0fWHHyUdstzY-WqUVp
+debug: set heartbeat interval for client HN0fWHHyUdstzY-WqUVp
+[90mGET /login?user_name=minato&password=minato [36m302 [90m4ms - 58b[0m
+minato
+[90mGET / [32m200 [90m12ms - 1018b[0m
+debug: served static content /socket.io.js
+[90mGET /stylesheets/style.css [32m200 [90m164ms - 110b[0m
+debug: client authorized
+info: handshake authorized DWqgreEdQFa358XaqUVr
+debug: setting request GET /socket.io/1/websocket/DWqgreEdQFa358XaqUVr
+debug: set heartbeat interval for client DWqgreEdQFa358XaqUVr
+debug: client authorized for 
+debug: websocket writing 1::
+connected from 192.168.249.1:59583
+{ message: 'こんにちは' }
+debug: websocket writing 5:::{"name":"msg","args":[{"date":"2014-03-12 09:21:18","message":"こんにちは"}]}
+debug: websocket writing 5:::{"name":"msg","args":[{"date":"2014-03-12 09:21:18","message":"こんにちは"}]}
+debug: emitting heartbeat for client HN0fWHHyUdstzY-WqUVp
+debug: websocket writing 2::
+debug: set heartbeat timeout for client HN0fWHHyUdstzY-WqUVp
+debug: got heartbeat packet
+debug: cleared heartbeat timeout for client HN0fWHHyUdstzY-WqUVp
+debug: set heartbeat interval for client HN0fWHHyUdstzY-WqUVp
+{ message: 'こんばんはやね' }
+debug: websocket writing 5:::{"name":"msg","args":[{"date":"2014-03-12 09:21:27","message":"こんばんはやね"}]}
+debug: websocket writing 5:::{"name":"msg","args":[{"date":"2014-03-12 09:21:27","message":"こんばんはやね"}]}
+debug: emitting heartbeat for client DWqgreEdQFa358XaqUVr
+debug: websocket writing 2::
+debug: set heartbeat timeout for client DWqgreEdQFa358XaqUVr
+debug: got heartbeat packet
+debug: cleared heartbeat timeout for client DWqgreEdQFa358XaqUVr
+debug: set heartbeat interval for client DWqgreEdQFa358XaqUVr
+deleted sesstion
+[90mGET /logout [36m302 [90m3ms - 58b[0m
+[90mGET / [36m302 [90m2ms - 68b[0m
+[90mGET /login [36m304 [90m7ms[0m
+info: transport end (undefined)
+debug: set close timeout for client HN0fWHHyUdstzY-WqUVp
+debug: cleared close timeout for client HN0fWHHyUdstzY-WqUVp
+debug: cleared heartbeat interval for client HN0fWHHyUdstzY-WqUVp
+disconnectted from 192.168.249.1:59520
+debug: discarding transport
+{ message: 'さようなら' }
+debug: websocket writing 5:::{"name":"msg","args":[{"date":"2014-03-12 09:21:44","message":"さようなら"}]}
+info: transport end (undefined)
+debug: set close timeout for client DWqgreEdQFa358XaqUVr
+debug: cleared close timeout for client DWqgreEdQFa358XaqUVr
+debug: cleared heartbeat interval for client DWqgreEdQFa358XaqUVr
+disconnectted from 192.168.249.1:59583
+debug: discarding transport
+deleted sesstion
+[90mGET /logout [36m302 [90m5ms - 58b[0m
+[90mGET / [36m302 [90m7ms - 68b[0m
+[90mGET /login [36m304 [90m4ms[0m
